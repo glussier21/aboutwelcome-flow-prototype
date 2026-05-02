@@ -67,8 +67,17 @@ const STRINGS = {
   // Shared
   "onboarding-welcome-header": "Firefox — Welcome",
 
-  // Terms of Use
-  "firefox-tos-legal-notice": 'By clicking "Accept and continue", you agree to the <a class="text-link" href="https://www.mozilla.org/about/legal/terms/firefox/" target="_blank" rel="noopener noreferrer">Firefox Terms of Use</a> and acknowledge the <a class="text-link" href="https://www.mozilla.org/privacy/firefox/" target="_blank" rel="noopener noreferrer">Firefox Privacy Notice</a>.',
+  // Preonboarding (Terms of Use modal)
+  "preonboarding-title": "Welcome to Firefox",
+  "preonboarding-subtitle": "By continuing, you agree to the Firefox Terms of Use and our Privacy Notice. To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla.",
+  "preonboarding-primary-cta-v2": "Continue",
+  "preonboarding-terms-of-use-header-button-title": "Read our Terms of Use",
+  "preonboarding-privacy-notice-header-button-title": "Read our Privacy Notice",
+  "preonboarding-manage-data-header-button-title": "Manage diagnostic and interaction data",
+  "preonboarding-checklist-interaction-data-label": "Send technical and interaction data to Mozilla",
+  "preonboarding-checklist-interaction-data-description": "Data about your device, hardware configuration, and how you use Firefox helps improve features, performance, and stability for users everywhere.",
+  "preonboarding-checklist-crash-reports-label": "Automatically send crash reports",
+  "preonboarding-checklist-crash-reports-description": "Crash reports allow us to diagnose and fix issues with the browser. Reports may include personal or sensitive data.",
 };
 
 document.l10n = {
@@ -149,28 +158,6 @@ const EASY_SETUP_BG = "url('assets/br-set-default-fox-heart.svg') var(--mr-secon
 // All screen definitions
 // ---------------------------------------------------------------------------
 const SCREEN = {
-  AW_TERMS_OF_USE: {
-    id: "AW_TERMS_OF_USE",
-    content: {
-      fullscreen: true, position: "split", split_narrow_bkg_position: "-60px",
-      progress_bar: true, logo: {}, hide_secondary_section: "responsive",
-      background: "url('assets/br-set-default-fox-heart.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1), rgba(33,3,64,1))",
-      title: { raw: "Firefox Terms of Use" },
-      subtitle: { raw: "Take a moment to review our terms before getting started." },
-      above_button_content: [
-        {
-          type: "text",
-          font_styles: "legal",
-          text: { string_id: "firefox-tos-legal-notice" },
-        },
-      ],
-      primary_button: {
-        label: { raw: "Accept and continue" },
-        action: { navigate: true },
-      },
-    },
-  },
-
   AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND: {
     id: "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
     content: {
@@ -483,7 +470,6 @@ const SCREEN = {
 // ---------------------------------------------------------------------------
 // Scenarios — every distinct user flow
 // ---------------------------------------------------------------------------
-const TOS_PREFIX    = ["AW_TERMS_OF_USE"];
 const IMPORT_TAIL   = ["AW_IMPORT_SETTINGS_EMBEDDED", "AW_AMO_INTRODUCE", "AW_ACCOUNT_LOGIN"];
 const IMPORT_SIGNED = ["AW_IMPORT_SETTINGS_EMBEDDED", "AW_AMO_INTRODUCE", "AW_GRATITUDE"];
 
@@ -492,37 +478,37 @@ const SCENARIOS = {
     {
       label: "macOS",
       items: [
-        { id: "mac-needs-default",   label: "Not set as default browser",           screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_DEFAULT",           ...IMPORT_TAIL] },
-        { id: "mac-already-default", label: "Already set as default browser",       screens: [...TOS_PREFIX, "AW_EASY_SETUP_ONLY_IMPORT",             ...IMPORT_TAIL] },
-        { id: "mac-signed-in",       label: "Already signed in to Firefox account", screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_DEFAULT",            ...IMPORT_SIGNED] },
+        { id: "mac-needs-default",   label: "Not set as default browser",           screens: ["AW_EASY_SETUP_NEEDS_DEFAULT",           ...IMPORT_TAIL] },
+        { id: "mac-already-default", label: "Already set as default browser",       screens: ["AW_EASY_SETUP_ONLY_IMPORT",             ...IMPORT_TAIL] },
+        { id: "mac-signed-in",       label: "Already signed in to Firefox account", screens: ["AW_EASY_SETUP_NEEDS_DEFAULT",            ...IMPORT_SIGNED] },
       ],
     },
     {
       label: "Windows",
       items: [
-        { id: "win-needs-pin-default", label: "Needs pin + default browser",    screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",   ...IMPORT_TAIL] },
-        { id: "win-needs-pin",         label: "Needs pin (already default)",    screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_PIN",               ...IMPORT_TAIL] },
-        { id: "win-needs-default",     label: "Needs default (already pinned)", screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_DEFAULT",           ...IMPORT_TAIL] },
-        { id: "win-fully-setup",       label: "Already pinned + default",       screens: [...TOS_PREFIX, "AW_EASY_SETUP_ONLY_IMPORT",             ...IMPORT_TAIL] },
+        { id: "win-needs-pin-default", label: "Needs pin + default browser",    screens: ["AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",   ...IMPORT_TAIL] },
+        { id: "win-needs-pin",         label: "Needs pin (already default)",    screens: ["AW_EASY_SETUP_NEEDS_PIN",               ...IMPORT_TAIL] },
+        { id: "win-needs-default",     label: "Needs default (already pinned)", screens: ["AW_EASY_SETUP_NEEDS_DEFAULT",           ...IMPORT_TAIL] },
+        { id: "win-fully-setup",       label: "Already pinned + default",       screens: ["AW_EASY_SETUP_ONLY_IMPORT",             ...IMPORT_TAIL] },
       ],
     },
     {
       label: "Smart Window (Windows)",
       items: [
-        { id: "sw-needs-pin-default", label: "Needs pin + default browser",    screens: [...TOS_PREFIX, "AW_SMART_WINDOW_NEEDS_DEFAULT_AND_PIN", ...IMPORT_TAIL] },
-        { id: "sw-needs-default",     label: "Needs default (already pinned)", screens: [...TOS_PREFIX, "AW_SMART_WINDOW_NEEDS_DEFAULT",         ...IMPORT_TAIL] },
-        { id: "sw-needs-pin",         label: "Needs pin (already default)",    screens: [...TOS_PREFIX, "AW_SMART_WINDOW_NEEDS_PIN",             ...IMPORT_TAIL] },
-        { id: "sw-no-checkboxes",     label: "Already pinned + default",       screens: [...TOS_PREFIX, "AW_SMART_WINDOW_NO_CHECKBOXES",         ...IMPORT_TAIL] },
+        { id: "sw-needs-pin-default", label: "Needs pin + default browser",    screens: ["AW_SMART_WINDOW_NEEDS_DEFAULT_AND_PIN", ...IMPORT_TAIL] },
+        { id: "sw-needs-default",     label: "Needs default (already pinned)", screens: ["AW_SMART_WINDOW_NEEDS_DEFAULT",         ...IMPORT_TAIL] },
+        { id: "sw-needs-pin",         label: "Needs pin (already default)",    screens: ["AW_SMART_WINDOW_NEEDS_PIN",             ...IMPORT_TAIL] },
+        { id: "sw-no-checkboxes",     label: "Already pinned + default",       screens: ["AW_SMART_WINDOW_NO_CHECKBOXES",         ...IMPORT_TAIL] },
       ],
     },
     {
       label: "Special entries",
       items: [
-        { id: "device-migration",  label: "Device migration (new device)",  screens: [...TOS_PREFIX, "AW_WELCOME_BACK", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
-        { id: "backup-found",      label: "Backup found",                   screens: [...TOS_PREFIX, "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
-        { id: "multiple-backups",  label: "Multiple backups found",         screens: [...TOS_PREFIX, "AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
-        { id: "return-to-amo",     label: "Return to AMO (add-on install)", screens: [...TOS_PREFIX, "RETURN_TO_AMO", "AW_ACCOUNT_LOGIN"] },
-        { id: "language-mismatch", label: "System/app language mismatch",   screens: [...TOS_PREFIX, "AW_EASY_SETUP_NEEDS_DEFAULT", "AW_LANGUAGE_MISMATCH", ...IMPORT_TAIL] },
+        { id: "device-migration",  label: "Device migration (new device)",  screens: ["AW_WELCOME_BACK", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
+        { id: "backup-found",      label: "Backup found",                   screens: ["AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
+        { id: "multiple-backups",  label: "Multiple backups found",         screens: ["AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND", "AW_EASY_SETUP_NEEDS_DEFAULT", ...IMPORT_TAIL] },
+        { id: "return-to-amo",     label: "Return to AMO (add-on install)", screens: ["RETURN_TO_AMO", "AW_ACCOUNT_LOGIN"] },
+        { id: "language-mismatch", label: "System/app language mismatch",   screens: ["AW_EASY_SETUP_NEEDS_DEFAULT", "AW_LANGUAGE_MISMATCH", ...IMPORT_TAIL] },
       ],
     },
   ],
