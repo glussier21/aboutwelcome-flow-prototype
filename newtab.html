@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="tokens-brand.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      background: light-dark(#f9f9fb, #1c1b22);
+      color: light-dark(#15141a, #fbfbfe);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 56px 32px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Logo */
+    .logo-wrap {
+      margin-bottom: 20px;
+    }
+    .logo-wrap img,
+    .logo-wrap svg {
+      width: 64px;
+      height: 64px;
+      display: block;
+    }
+
+    /* Search bar */
+    .search-bar {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: light-dark(#fff, #42414d);
+      border: 1px solid light-dark(#cfcfd8, #52525e);
+      border-radius: 100px;
+      padding: 0 20px;
+      height: 52px;
+      margin-bottom: 48px;
+      box-shadow: 0 1px 6px light-dark(rgba(21,20,26,.1), rgba(0,0,0,.3));
+      cursor: text;
+    }
+    .search-bar svg {
+      flex-shrink: 0;
+      color: light-dark(#8f8f9d, #9e9ea8);
+    }
+    .search-bar span {
+      font-size: 15px;
+      color: light-dark(#8f8f9d, #9e9ea8);
+    }
+
+    /* Shared section container */
+    .section {
+      width: 100%;
+      max-width: 920px;
+      margin-bottom: 48px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: light-dark(#5b5b66, #9e9ea8);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+
+    /* Shortcuts */
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 8px;
+    }
+    .shortcut {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 4px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .shortcut:hover {
+      background: light-dark(rgba(21,20,26,.07), rgba(251,251,254,.07));
+    }
+    .shortcut-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(21,20,26,.18);
+      flex-shrink: 0;
+    }
+    .shortcut-label {
+      font-size: 12px;
+      color: light-dark(#15141a, #cfcfd8);
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80px;
+    }
+
+    /* Pocket stories */
+    .pocket-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .pocket-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pocket-logo { width: 16px; height: 16px; flex-shrink: 0; }
+    .learn-more {
+      font-size: 12px;
+      color: light-dark(#5b5b66, #9e9ea8);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .learn-more:hover { text-decoration: underline; }
+
+    .pocket-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .pocket-card { cursor: pointer; }
+    .pocket-img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .pocket-source {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: light-dark(#5b5b66, #9e9ea8);
+      margin-bottom: 6px;
+    }
+    .pocket-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: light-dark(#15141a, #fbfbfe);
+    }
+    .pocket-card:hover .pocket-title {
+      color: light-dark(#0060df, #00ddff);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Firefox logo -->
+    <div class="logo-wrap">
+      <img id="newtab-logo" src="assets/splash-logo.svg" alt="">
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-bar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M6.5 1a5.5 5.5 0 1 0 3.525 9.74l3.367 3.368a.75.75 0 1 0 1.061-1.061L11.086 9.71A5.5 5.5 0 0 0 6.5 1zm-4 5.5a4 4 0 1 1 8 0 4 4 0 0 1-8 0z"/>
+      </svg>
+      <span>Search with Google or enter address</span>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="section">
+      <div class="section-title">Shortcuts</div>
+      <div class="shortcuts-grid">
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#4285f4">G</div>
+          <span class="shortcut-label">Google</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#ff0000">▶</div>
+          <span class="shortcut-label">YouTube</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#1877f2">f</div>
+          <span class="shortcut-label">Facebook</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#000">𝕏</div>
+          <span class="shortcut-label">X</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#ff6900">R</div>
+          <span class="shortcut-label">Reddit</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#0a66c2">in</div>
+          <span class="shortcut-label">LinkedIn</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#21759b">W</div>
+          <span class="shortcut-label">Wikipedia</span>
+        </div>
+        <div class="shortcut">
+          <div class="shortcut-icon" style="background:#e60023">P</div>
+          <span class="shortcut-label">Pinterest</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommended by Pocket -->
+    <div class="section">
+      <div class="pocket-header">
+        <div class="pocket-header-left">
+          <svg class="pocket-logo" viewBox="0 0 16 16" fill="#ef4056">
+            <path d="M14.5 1h-13A1.5 1.5 0 0 0 0 2.5V8a8 8 0 0 0 16 0V2.5A1.5 1.5 0 0 0 14.5 1zM8 12.5 3.25 7.75a.75.75 0 1 1 1.06-1.06L8 10.44l3.69-3.75a.75.75 0 1 1 1.06 1.06L8 12.5z"/>
+          </svg>
+          <span class="section-title" style="margin:0">Recommended by Pocket</span>
+        </div>
+        <a class="learn-more">Learn more</a>
+      </div>
+
+      <div class="pocket-grid">
+        <div class="pocket-card">
+          <svg class="pocket-img" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+            <rect width="640" height="360" fill="#dce8fb"/>
+            <ellipse cx="320" cy="200" rx="180" ry="100" fill="#0060df" opacity=".18"/>
+            <rect x="220" y="110" width="200" height="140" rx="16" fill="#0250bb" opacity=".22"/>
+            <circle cx="330" cy="175" r="55" fill="#0060df" opacity=".3"/>
+          </svg>
+          <div class="pocket-source">The Atlantic</div>
+          <div class="pocket-title">How Mindfulness Became a Billion-Dollar Business</div>
+        </div>
+
+        <div class="pocket-card">
+          <svg class="pocket-img" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+            <rect width="640" height="360" fill="#e8f5e2"/>
+            <circle cx="230" cy="190" r="90" fill="#2ac3a2" opacity=".25"/>
+            <rect x="300" y="90" width="220" height="180" rx="14" fill="#2ac3a2" opacity=".2"/>
+            <circle cx="390" cy="200" r="50" fill="#008060" opacity=".3"/>
+          </svg>
+          <div class="pocket-source">Wired</div>
+          <div class="pocket-title">The Quiet Revolution in Battery Technology That Could Change Everything</div>
+        </div>
+
+        <div class="pocket-card">
+          <svg class="pocket-img" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+            <rect width="640" height="360" fill="#fdecd8"/>
+            <ellipse cx="300" cy="200" rx="160" ry="90" fill="#ff980e" opacity=".2"/>
+            <rect x="160" y="90" width="190" height="180" rx="14" fill="#ff6900" opacity=".2"/>
+            <circle cx="370" cy="170" r="70" fill="#ff3750" opacity=".18"/>
+          </svg>
+          <div class="pocket-source">National Geographic</div>
+          <div class="pocket-title">Inside the Race to Map the Ocean Floor Before It's Too Late</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    fetch("assets/splash-logo.svg")
+      .then(r => r.text())
+      .then(svgText => {
+        const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+        doc.querySelectorAll("style").forEach(s => s.remove());
+        const svg = doc.documentElement;
+        svg.setAttribute("width", "64");
+        svg.setAttribute("height", "64");
+        document.getElementById("newtab-logo").replaceWith(svg);
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

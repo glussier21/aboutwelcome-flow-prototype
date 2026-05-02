@@ -569,7 +569,7 @@ window.AWFindBackupsInWellKnownLocations = async () => {};
 window.AWPredictRemoteType    = () => "web";
 
 window.AWFinish = () => {
-  window.location.href = "about:newtab";
+  window.location.href = "newtab.html";
 };
 
 if (typeof globalThis.Services === "undefined") {
