@@ -1,0 +1,36 @@
+name: Sync Firefox bundle
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # Daily at 7am UTC
+  workflow_dispatch:       # Also runnable manually from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest aboutwelcome bundle from Firefox
+        run: |
+          WORK=$(mktemp -d)
+          git clone --depth=1 --filter=blob:none --sparse \
+            https://github.com/mozilla-firefox/firefox.git "$WORK"
+          git -C "$WORK" sparse-checkout set browser/components/aboutwelcome/content
+          cp "$WORK/browser/components/aboutwelcome/content/aboutwelcome.bundle.js" ./aboutwelcome.bundle.js
+          rm -rf "$WORK"
+
+      - name: Commit and push if bundle changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add aboutwelcome.bundle.js
+          if git diff --staged --quiet; then
+            echo "Bundle is already up to date."
+          else
+            git commit -m "chore: sync Firefox bundle $(date +%Y-%m-%d)"
+            git push
+          fi

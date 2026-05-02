@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Firefox — Welcome</title>
+    <!-- Firefox Design System tokens — must load before aboutwelcome.css -->
+    <link rel="stylesheet" href="tokens-brand.css" />
+    <link rel="stylesheet" href="aboutwelcome.css" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      #multi-stage-message-root {
+        height: 100%;
+      }
+
+      /* Defaults for variables normally set by Firefox's contentTheme.js */
+      :root {
+        color-scheme: light dark;
+        --newtab-background-color: light-dark(#f9f9fb, #1c1b22);
+        --newtab-background-color-secondary: light-dark(#fff, #2b2a33);
+        --newtab-primary-action-background: light-dark(#0060df, #00ddff);
+        --newtab-primary-element-hover-color: light-dark(#0250bb, #80ebff);
+        --newtab-text-primary-color: light-dark(#15141a, #fbfbfe);
+        --newtab-text-conditional-color: light-dark(#5b5b66, #cfcfd8);
+
+        /* Primary button color — normally injected per-screen by contentTheme.js */
+        --button-background-color-primary: var(--color-accent-primary);
+        --button-background-color-primary-hover: var(--color-accent-primary-hover);
+        --button-background-color-primary-active: var(--color-accent-primary-active);
+        --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-100));
+        --button-text-color-primary-hover: light-dark(var(--color-white), var(--color-gray-100));
+        --button-border-color-primary: transparent;
+        --button-border-color-primary-hover: transparent;
+      }
+
+      /* common.css in Firefox resets all button appearance and applies design
+         system tokens. Without it, browsers render native gradient buttons.
+         These rules replicate what common.css provides. */
+      .onboardingContainer button,
+      .onboardingContainer .primary,
+      .onboardingContainer .secondary,
+      .onboardingContainer .additional-cta {
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: var(--border-radius-circle);
+        box-shadow: none;
+        cursor: pointer;
+      }
+
+      /* Primary (CTA) buttons */
+      .onboardingContainer .primary {
+        background-color: var(--button-background-color-primary);
+        color: var(--button-text-color-primary);
+        border: 1px solid transparent;
+      }
+      .onboardingContainer .primary:hover:not(:disabled) {
+        background-color: var(--button-background-color-primary-hover);
+      }
+      .onboardingContainer .primary:active:not(:disabled) {
+        background-color: var(--button-background-color-primary-active);
+      }
+
+      /* Secondary (ghost) buttons */
+      .onboardingContainer .secondary {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 1px solid transparent;
+      }
+      .onboardingContainer .secondary:hover:not(:disabled) {
+        background-color: var(--button-background-color-hover);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="multi-stage-message-root"
+      class="welcome-container"
+      role="presentation"
+    ></div>
+
+    <!-- React 17 — matches the version Firefox bundles -->
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+
+    <!-- Stubs must load before the bundle -->
+    <script src="stubs.js"></script>
+    <script src="aboutwelcome.bundle.js"></script>
+    <script src="switcher.js"></script>
+  </body>
+</html>
