@@ -967,17 +967,18 @@ if (!customElements.get("backup-restore")) {
     checkItems: ["Set Firefox as default browser", "Import from previous browser"],
     multiItems: ["Option 1", "Option 2", "Option 3"],
     multiLabel: "Choose what applies to you",
+    singleItems: ["Option A", "Option B", "Option C"],
+    singleLabel: "Select an option",
   };
 
   function _buildScreen(cfg) {
     const r = s => ({ raw: s });
     const content = {};
 
+    content.fullscreen = true;
     if (cfg.pos === "split") {
       content.position = "split";
       content.split_narrow_bkg_position = "-228px";
-    } else if (cfg.pos === "full") {
-      content.fullscreen = true;
     }
 
     if (cfg.logo)        content.logo         = {};
@@ -1010,6 +1011,19 @@ if (!customElements.get("backup-restore")) {
       content.primary_button = {
         label: r(cfg.primLabel),
         action: { type: "MULTI_ACTION", collectSelect: true, navigate: true, data: { actions: [] } }
+      };
+    } else if (cfg.tilesType === "single-select" && cfg.singleItems?.length) {
+      content.tiles = {
+        type: "single-select",
+        data: cfg.singleItems.map((t, i) => ({
+          id: `opt_${i}`, label: r(t),
+          action: { type: "MULTI_ACTION", data: { actions: [] } },
+        }))
+      };
+      content.primary_button = {
+        label: r(cfg.primLabel || "Continue"),
+        action: { type: "MULTI_ACTION", collectSelect: true, navigate: true, data: { actions: [] } },
+        disabled: "hasActiveSingleSelect",
       };
     } else if (cfg.tilesType === "migration") {
       content.tiles = { type: "migration-wizard", migrate_start: {}, migrate_close: {} };

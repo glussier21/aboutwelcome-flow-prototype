@@ -222,10 +222,6 @@
             <input type="radio" name="pos" id="pos-center" value="centered">
             <label for="pos-center">Centered</label>
           </div>
-          <div class="seg-opt">
-            <input type="radio" name="pos" id="pos-full" value="full">
-            <label for="pos-full">Full</label>
-          </div>
         </div>
       </div>
       <div class="tog-row">
@@ -294,6 +290,10 @@
           <input type="radio" name="tiles" id="tl-mig" value="migration">
           <label for="tl-mig"><span class="ti">📥</span>Migration</label>
         </div>
+        <div class="tile-type">
+          <input type="radio" name="tiles" id="tl-single" value="single-select">
+          <label for="tl-single"><span class="ti">🔘</span>Single Select</label>
+        </div>
       </div>
 
       <div id="cfg-checklist" style="display:none">
@@ -308,6 +308,15 @@
         </div>
         <div class="dlist" id="list-multi"></div>
         <button class="add-btn" id="add-multi">+ Add option</button>
+      </div>
+
+      <div id="cfg-single" style="display:none">
+        <div class="field" style="margin-bottom:7px">
+          <label class="label" for="inp-single-lbl">Legend (screen reader label)</label>
+          <input class="input" id="inp-single-lbl" type="text" value="Select an option">
+        </div>
+        <div class="dlist" id="list-single"></div>
+        <button class="add-btn" id="add-single">+ Add option</button>
       </div>
     </div>
 
@@ -380,6 +389,8 @@
     checkItems:   ['Set Firefox as default browser', 'Import from previous browser'],
     multiItems:   ['Option 1', 'Option 2', 'Option 3'],
     multiLabel:   'Choose what applies to you',
+    singleItems:  ['Option A', 'Option B', 'Option C'],
+    singleLabel:  'Select an option',
     scheme:       'light',
   };
 
@@ -428,15 +439,16 @@
   document.querySelectorAll('input[name="tiles"]').forEach(r => {
     r.addEventListener('change', () => {
       S.tilesType = r.value;
-      document.getElementById('cfg-checklist').style.display = r.value === 'checklist' ? '' : 'none';
-      document.getElementById('cfg-multi').style.display     = r.value === 'multiselect' ? '' : 'none';
+      document.getElementById('cfg-checklist').style.display = r.value === 'checklist'     ? '' : 'none';
+      document.getElementById('cfg-multi').style.display     = r.value === 'multiselect'   ? '' : 'none';
+      document.getElementById('cfg-single').style.display    = r.value === 'single-select' ? '' : 'none';
       sync();
     });
   });
 
   // ── Text inputs ───────────────────────────────────────────────────────────
   [['inp-title','title'],['inp-sub','subtitle'],['inp-prim','primLabel'],
-   ['inp-sec','secLabel'],['inp-multi-lbl','multiLabel']].forEach(([id, key]) => {
+   ['inp-sec','secLabel'],['inp-multi-lbl','multiLabel'],['inp-single-lbl','singleLabel']].forEach(([id, key]) => {
     document.getElementById(id).addEventListener('input', e => { S[key] = e.target.value; sync(); });
   });
 
@@ -455,8 +467,9 @@
   }
 
   const resync = () => sync();
-  renderList('list-check', S.checkItems, resync);
+  renderList('list-check',  S.checkItems,  resync);
   renderList('list-multi',  S.multiItems,  resync);
+  renderList('list-single', S.singleItems, resync);
 
   document.getElementById('add-check').addEventListener('click', () => {
     S.checkItems.push('New item');
@@ -465,6 +478,10 @@
   document.getElementById('add-multi').addEventListener('click', () => {
     S.multiItems.push('New option');
     renderList('list-multi', S.multiItems, resync); resync();
+  });
+  document.getElementById('add-single').addEventListener('click', () => {
+    S.singleItems.push('New option');
+    renderList('list-single', S.singleItems, resync); resync();
   });
 
   // ── Scheme toggle ─────────────────────────────────────────────────────────
@@ -486,6 +503,7 @@
       primLabel: S.primLabel, hasSecondary: S.hasSecondary, secLabel: S.secLabel,
       tilesType: S.tilesType,
       checkItems: [...S.checkItems], multiItems: [...S.multiItems], multiLabel: S.multiLabel,
+      singleItems: [...S.singleItems], singleLabel: S.singleLabel,
     };
   }
 
@@ -495,8 +513,8 @@
     const r = s => ({ raw: s });
     const content = {};
 
+    content.fullscreen = true;
     if (cfg.pos === 'split') { content.position = 'split'; content.split_narrow_bkg_position = '-228px'; }
-    else if (cfg.pos === 'full') { content.fullscreen = true; }
 
     if (cfg.logo) content.logo = {};
     if (cfg.progressBar) content.progress_bar = true;
@@ -525,6 +543,17 @@
       };
       content.primary_button = { label: r(cfg.primLabel),
         action: { type: 'MULTI_ACTION', collectSelect: true, navigate: true, data: { actions: [] } } };
+    } else if (cfg.tilesType === 'single-select' && cfg.singleItems.length) {
+      content.tiles = {
+        type: 'single-select',
+        data: cfg.singleItems.map((t, i) => ({
+          id: `opt_${i}`, label: r(t),
+          action: { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: `opt_${i}` } } },
+        }))
+      };
+      content.primary_button = { label: r(cfg.primLabel),
+        action: { type: 'MULTI_ACTION', collectSelect: true, navigate: true, data: { actions: [] } },
+        disabled: 'hasActiveSingleSelect' };
     } else if (cfg.tilesType === 'migration') {
       content.tiles = { type: 'migration-wizard', migrate_start: {}, migrate_close: {} };
     }

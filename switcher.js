@@ -2,6 +2,8 @@
 // Inject after stubs.js (needs SCENARIOS / currentScenarioId from stubs.js).
 
 (function () {
+  // Skip in sandbox mode
+  if (new URLSearchParams(location.search).has("sandbox")) return;
   const style = document.createElement("style");
   style.textContent = `
     #sw-toggle {
