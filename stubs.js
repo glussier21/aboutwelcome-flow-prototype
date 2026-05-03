@@ -989,8 +989,8 @@ if (!customElements.get("backup-restore")) {
 
     if (cfg.tilesType === "checklist" && cfg.checkItems?.length) {
       content.tiles = {
-        type: "checklist", style: "icon",
-        items: cfg.checkItems.map((t, i) => ({
+        type: "multiselect",
+        data: cfg.checkItems.map((t, i) => ({
           id: `check_${i}`, label: r(t), defaultValue: true,
           checkedAction:   { type: "MULTI_ACTION", data: { actions: [] } },
           uncheckedAction: { type: "MULTI_ACTION", data: { actions: [] } },
