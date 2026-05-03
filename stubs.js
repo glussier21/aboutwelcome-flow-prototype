@@ -554,6 +554,33 @@ if (_nimbusPreviewData) {
   });
 }
 
+// In Nimbus preview mode some skip/primary buttons use OPEN_ABOUT_PAGE to
+// navigate to about:newtab. The bundle can't run that action, so we patch
+// those buttons to use navigate:true instead — the bundle advances screens
+// normally, and AWFinish() fires on the last screen as usual.
+function _patchScreenForPreview(screen) {
+  if (!screen?.content) return screen;
+  const content = { ...screen.content };
+  const _goesToNewtab = action => {
+    const acts = action?.type === "MULTI_ACTION"
+      ? (action.data?.actions || []) : [action];
+    return acts.some(a =>
+      a?.type === "OPEN_ABOUT_PAGE" &&
+      (a.data?.args === "newtab" || String(a.data?.args).startsWith("newtab"))
+    );
+  };
+  for (const key of ["primary_button", "secondary_button"]) {
+    const btn = content[key];
+    if (!btn?.action) continue;
+    // Only patch buttons that navigate to newtab without navigate:true
+    // (navigate:true ones already work through the normal bundle flow)
+    if (!btn.action.navigate && _goesToNewtab(btn.action)) {
+      content[key] = { ...btn, action: { navigate: true } };
+    }
+  }
+  return { ...screen, content };
+}
+
 window.AWGetFeatureConfig = async () => {
   if (_nimbusPreviewData?.screens?.length) {
     return {
@@ -561,7 +588,7 @@ window.AWGetFeatureConfig = async () => {
       template: "multistage",
       transitions: true,
       startScreen: 0,
-      screens: _nimbusPreviewData.screens,
+      screens: _nimbusPreviewData.screens.map(_patchScreenForPreview),
     };
   }
   return {
