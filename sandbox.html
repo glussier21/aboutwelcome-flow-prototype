@@ -142,6 +142,32 @@
       font-family: inherit; margin-top: 5px; transition: color .12s, border-color .12s; }
     .add-btn:hover { color: var(--sb-accent); border-color: var(--sb-accent); }
 
+    /* Image upload zone (screen background) */
+    .upload-zone { margin-top: 8px; border: 1px dashed var(--sb-border); border-radius: 6px;
+      overflow: hidden; }
+    .upload-zone-btn { width: 100%; height: 30px; display: flex; align-items: center;
+      justify-content: center; gap: 6px; background: none; border: none; color: var(--sb-muted);
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: color .12s, background .12s; }
+    .upload-zone-btn:hover { color: var(--sb-accent); background: rgba(0,221,255,.05); }
+    .upload-zone-preview { width: 100%; height: 72px; background-size: cover;
+      background-position: center; position: relative; display: none; }
+    .upload-zone-preview.show { display: block; }
+    .upload-zone-replace { position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; background: rgba(0,0,0,.45); color: #fff; font-size: 11px;
+      opacity: 0; transition: opacity .15s; cursor: pointer; }
+    .upload-zone-preview:hover .upload-zone-replace { opacity: 1; }
+
+    /* Per-item image picker (single-select) */
+    .img-pick { width: 28px; height: 28px; flex-shrink: 0; border-radius: 5px;
+      border: 1px dashed var(--sb-border); cursor: pointer; position: relative;
+      background: var(--sb-surface) center/cover no-repeat;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--sb-muted); transition: border-color .12s; }
+    .img-pick:hover { border-color: var(--sb-accent); }
+    .img-pick.has-img { border-color: var(--sb-accent); border-style: solid; }
+    .img-pick:not(.has-img)::before { content: '🖼'; }
+
     /* ── Right pane ────────────────────────────────────────────────────────── */
     .right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
@@ -238,6 +264,13 @@
     <div class="section" id="sec-bg">
       <div class="sec-label">Background image</div>
       <div class="swatches" id="swatches"></div>
+      <div class="upload-zone" id="bg-upload-zone">
+        <input type="file" id="bg-file" accept="image/*" style="display:none">
+        <button class="upload-zone-btn" id="bg-upload-btn">↑ Upload custom image</button>
+        <div class="upload-zone-preview" id="bg-preview">
+          <div class="upload-zone-replace" id="bg-replace">Click to replace</div>
+        </div>
+      </div>
     </div>
 
     <!-- Content -->
@@ -372,6 +405,7 @@
       css: 'linear-gradient(160deg, #ffb347 0%, #ff5e6c 60%, #c94b8e 100%)' },
     { id: 'ocean',     lbl: 'Ocean',        swatch: 'linear-gradient(160deg,#0061e0,#00ddff)',
       css: 'linear-gradient(160deg, #0061e0 0%, #00ddff 100%)' },
+    { id: 'custom',    lbl: 'Upload',       swatch: '#3a3944', css: '', isCustom: true },
   ];
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -389,8 +423,13 @@
     checkItems:   ['Set Firefox as default browser', 'Import from previous browser'],
     multiItems:   ['Option 1', 'Option 2', 'Option 3'],
     multiLabel:   'Choose what applies to you',
-    singleItems:  ['Option A', 'Option B', 'Option C'],
+    singleItems:  [
+      { label: 'Option A', img: null },
+      { label: 'Option B', img: null },
+      { label: 'Option C', img: null },
+    ],
     singleLabel:  'Select an option',
+    customBg:     null,
     scheme:       'light',
   };
 
@@ -399,11 +438,14 @@
   function renderSwatches() {
     swatchGrid.innerHTML = '';
     BG.forEach(b => {
+      if (b.isCustom && !S.customBg) return; // hide custom swatch until an image is uploaded
       const wrap = document.createElement('div');
       wrap.className = 'swatch-wrap';
       const sw = document.createElement('div');
       sw.className = 'swatch' + (S.bg === b.id ? ' on' : '');
-      sw.style.background = b.swatch;
+      sw.style.background = (b.isCustom && S.customBg)
+        ? `url('${S.customBg}') center/cover no-repeat`
+        : b.swatch;
       sw.title = b.lbl;
       sw.addEventListener('click', () => { S.bg = b.id; renderSwatches(); sync(); });
       const lbl = document.createElement('div');
@@ -414,6 +456,50 @@
     });
   }
   renderSwatches();
+
+  // ── Image utilities ───────────────────────────────────────────────────────
+  function resizeToDataURL(file, maxW, maxH, quality) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio); h = Math.round(h * ratio);
+        }
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', quality || 0.85));
+      };
+      img.src = url;
+    });
+  }
+
+  // ── Background upload ─────────────────────────────────────────────────────
+  const bgFile    = document.getElementById('bg-file');
+  const bgPreview = document.getElementById('bg-preview');
+
+  function applyCustomBg(dataURL) {
+    S.customBg = dataURL;
+    S.bg = 'custom';
+    bgPreview.style.backgroundImage = `url('${dataURL}')`;
+    bgPreview.classList.add('show');
+    document.getElementById('bg-upload-btn').style.display = 'none';
+    renderSwatches();
+    sync();
+  }
+
+  document.getElementById('bg-upload-btn').addEventListener('click', () => bgFile.click());
+  document.getElementById('bg-replace').addEventListener('click', () => bgFile.click());
+  bgFile.addEventListener('change', async e => {
+    const file = e.target.files[0]; if (!file) return;
+    e.target.value = '';
+    const dataURL = await resizeToDataURL(file, 900, 1200, 0.88);
+    applyCustomBg(dataURL);
+  });
 
   // ── Toggles ───────────────────────────────────────────────────────────────
   document.querySelectorAll('.tog').forEach(el => {
@@ -466,10 +552,43 @@
     });
   }
 
+  // Single-select list with per-item image upload
+  function renderSingleList() {
+    const c = document.getElementById('list-single');
+    c.innerHTML = '';
+    S.singleItems.forEach((item, i) => {
+      const row = document.createElement('div'); row.className = 'dlist-row';
+
+      const imgPick = document.createElement('div');
+      imgPick.className = 'img-pick' + (item.img ? ' has-img' : '');
+      if (item.img) imgPick.style.backgroundImage = `url('${item.img}')`;
+      imgPick.title = item.img ? 'Click to replace image' : 'Add image';
+
+      const fileInp = document.createElement('input');
+      fileInp.type = 'file'; fileInp.accept = 'image/*'; fileInp.style.display = 'none';
+      fileInp.addEventListener('change', async e => {
+        const file = e.target.files[0]; if (!file) return; e.target.value = '';
+        S.singleItems[i].img = await resizeToDataURL(file, 200, 200, 0.9);
+        renderSingleList(); resync();
+      });
+      imgPick.appendChild(fileInp);
+      imgPick.addEventListener('click', () => fileInp.click());
+
+      const inp = document.createElement('input'); inp.className = 'input'; inp.type = 'text'; inp.value = item.label;
+      inp.addEventListener('input', () => { S.singleItems[i].label = inp.value; resync(); });
+
+      const del = document.createElement('button'); del.className = 'del-btn'; del.textContent = '×';
+      del.addEventListener('click', () => { S.singleItems.splice(i, 1); renderSingleList(); resync(); });
+
+      row.appendChild(imgPick); row.appendChild(inp); row.appendChild(del);
+      c.appendChild(row);
+    });
+  }
+
   const resync = () => sync();
   renderList('list-check',  S.checkItems,  resync);
   renderList('list-multi',  S.multiItems,  resync);
-  renderList('list-single', S.singleItems, resync);
+  renderSingleList();
 
   document.getElementById('add-check').addEventListener('click', () => {
     S.checkItems.push('New item');
@@ -480,8 +599,8 @@
     renderList('list-multi', S.multiItems, resync); resync();
   });
   document.getElementById('add-single').addEventListener('click', () => {
-    S.singleItems.push('New option');
-    renderList('list-single', S.singleItems, resync); resync();
+    S.singleItems.push({ label: 'New option', img: null });
+    renderSingleList(); resync();
   });
 
   // ── Scheme toggle ─────────────────────────────────────────────────────────
@@ -495,15 +614,21 @@
 
   // ── Build config for localStorage (used by stubs.js sandbox mode) ─────────
   function buildCfg() {
-    const bgObj = BG.find(b => b.id === S.bg);
+    let bgCSS = '';
+    if (S.bg === 'custom' && S.customBg) {
+      bgCSS = `url('${S.customBg}') center/cover no-repeat`;
+    } else {
+      const bgObj = BG.find(b => b.id === S.bg);
+      bgCSS = bgObj ? bgObj.css : '';
+    }
     return {
-      pos: S.pos, logo: S.logo, progressBar: S.progressBar,
-      background: bgObj ? bgObj.css : '',
+      pos: S.pos, logo: S.logo, progressBar: S.progressBar, background: bgCSS,
       title: S.title, subtitle: S.subtitle,
       primLabel: S.primLabel, hasSecondary: S.hasSecondary, secLabel: S.secLabel,
       tilesType: S.tilesType,
       checkItems: [...S.checkItems], multiItems: [...S.multiItems], multiLabel: S.multiLabel,
-      singleItems: [...S.singleItems], singleLabel: S.singleLabel,
+      singleItems: S.singleItems.map(it => ({ label: it.label, img: it.img })),
+      singleLabel: S.singleLabel,
     };
   }
 
@@ -546,10 +671,17 @@
     } else if (cfg.tilesType === 'single-select' && cfg.singleItems.length) {
       content.tiles = {
         type: 'single-select',
-        data: cfg.singleItems.map((t, i) => ({
-          id: `opt_${i}`, label: r(t),
-          action: { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: `opt_${i}` } } },
-        }))
+        data: cfg.singleItems.map((item, i) => {
+          const obj = {
+            id: `opt_${i}`, label: r(item.label),
+            action: { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: `opt_${i}` } } },
+          };
+          if (item.img) obj.icon = {
+            background: `url('${item.img}') center/cover no-repeat`,
+            width: '64px', height: '64px', borderRadius: '8px',
+          };
+          return obj;
+        })
       };
       content.primary_button = { label: r(cfg.primLabel),
         action: { type: 'MULTI_ACTION', collectSelect: true, navigate: true, data: { actions: [] } },

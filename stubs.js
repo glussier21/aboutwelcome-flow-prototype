@@ -967,7 +967,7 @@ if (!customElements.get("backup-restore")) {
     checkItems: ["Set Firefox as default browser", "Import from previous browser"],
     multiItems: ["Option 1", "Option 2", "Option 3"],
     multiLabel: "Choose what applies to you",
-    singleItems: ["Option A", "Option B", "Option C"],
+    singleItems: [{ label: "Option A", img: null }, { label: "Option B", img: null }, { label: "Option C", img: null }],
     singleLabel: "Select an option",
   };
 
@@ -1015,10 +1015,18 @@ if (!customElements.get("backup-restore")) {
     } else if (cfg.tilesType === "single-select" && cfg.singleItems?.length) {
       content.tiles = {
         type: "single-select",
-        data: cfg.singleItems.map((t, i) => ({
-          id: `opt_${i}`, label: r(t),
-          action: { type: "MULTI_ACTION", data: { actions: [] } },
-        }))
+        data: cfg.singleItems.map((item, i) => {
+          const obj = {
+            id: `opt_${i}`,
+            label: r(typeof item === "string" ? item : item.label),
+            action: { type: "MULTI_ACTION", data: { actions: [] } },
+          };
+          if (item.img) obj.icon = {
+            background: `url('${item.img}') center/cover no-repeat`,
+            width: "64px", height: "64px", borderRadius: "8px",
+          };
+          return obj;
+        })
       };
       content.primary_button = {
         label: r(cfg.primLabel || "Continue"),
