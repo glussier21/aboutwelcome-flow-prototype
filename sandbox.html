@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Screen Builder — Firefox Onboarding</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sb-bg:       #1c1b22;
+      --sb-surface:  #2b2a33;
+      --sb-surface2: #3a3944;
+      --sb-border:   #3e3d4e;
+      --sb-text:     #fbfbfe;
+      --sb-muted:    #8f8f9d;
+      --sb-accent:   #00ddff;
+      --sb-danger:   #ff4f5e;
+      --sb-success:  #3fe1b0;
+      --sb-hdr:      48px;
+      --sb-side:     320px;
+      --sb-json:     210px;
+    }
+
+    html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px; background: var(--sb-bg); color: var(--sb-text); overflow: hidden; }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .hdr { height: var(--sb-hdr); background: #15141a; border-bottom: 1px solid var(--sb-border);
+      display: flex; align-items: center; padding: 0 16px; gap: 10px; flex-shrink: 0; }
+
+    .hdr-brand { display: flex; align-items: center; gap: 7px; font-weight: 600;
+      font-size: 13px; text-decoration: none; color: var(--sb-text); }
+
+    .hdr-sep { width: 1px; height: 16px; background: var(--sb-border); }
+
+    .hdr-sub { font-size: 12px; color: var(--sb-muted); }
+
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    .btn { height: 28px; padding: 0 11px; border-radius: 6px;
+      border: 1px solid var(--sb-border); background: var(--sb-surface);
+      color: var(--sb-text); font-size: 12px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; font-family: inherit;
+      text-decoration: none; transition: background 0.12s, border-color 0.12s; }
+    .btn:hover { background: var(--sb-surface2); }
+    .btn-accent { background: var(--sb-accent); color: #15141a;
+      border-color: transparent; font-weight: 600; }
+    .btn-accent:hover { background: #80ebff; }
+    .btn.ok { background: var(--sb-success); color: #15141a; border-color: transparent; }
+
+    /* ── Body layout ─────────────────────────────────────────────────────── */
+    .body { display: flex; height: calc(100vh - var(--sb-hdr)); }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
+    .side { width: var(--sb-side); flex-shrink: 0; background: var(--sb-bg);
+      border-right: 1px solid var(--sb-border); overflow-y: auto; overflow-x: hidden; }
+
+    .section { border-bottom: 1px solid var(--sb-border); padding: 13px 14px; }
+
+    .sec-label { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--sb-muted); margin-bottom: 10px; }
+
+    .field { margin-bottom: 9px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .label { display: block; font-size: 11px; color: var(--sb-muted); margin-bottom: 3px; }
+
+    .input { width: 100%; height: 28px; padding: 0 8px; background: var(--sb-surface);
+      border: 1px solid var(--sb-border); border-radius: 6px; color: var(--sb-text);
+      font-size: 12px; font-family: inherit; outline: none;
+      transition: border-color 0.12s; }
+    .input:focus { border-color: var(--sb-accent); }
+
+    .textarea { width: 100%; padding: 6px 8px; background: var(--sb-surface);
+      border: 1px solid var(--sb-border); border-radius: 6px; color: var(--sb-text);
+      font-size: 12px; font-family: inherit; outline: none; resize: vertical;
+      min-height: 50px; line-height: 1.4; transition: border-color 0.12s; }
+    .textarea:focus { border-color: var(--sb-accent); }
+
+    /* Segment control */
+    .seg { display: flex; background: var(--sb-surface);
+      border: 1px solid var(--sb-border); border-radius: 6px; overflow: hidden; }
+    .seg-opt { flex: 1; position: relative; }
+    .seg-opt input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+    .seg-opt label { display: flex; align-items: center; justify-content: center;
+      height: 28px; cursor: pointer; font-size: 12px; color: var(--sb-muted);
+      transition: background .12s, color .12s; user-select: none;
+      border-right: 1px solid var(--sb-border); }
+    .seg-opt:last-child label { border-right: none; }
+    .seg-opt input:checked + label { background: var(--sb-accent); color: #15141a; font-weight: 600; }
+
+    /* Toggle row */
+    .tog-row { display: flex; align-items: center; justify-content: space-between; height: 26px; }
+    .tog-name { font-size: 12px; }
+    .tog { width: 30px; height: 17px; background: var(--sb-surface);
+      border: 1px solid var(--sb-border); border-radius: 9px; cursor: pointer;
+      position: relative; transition: background .15s, border-color .15s; flex-shrink: 0; }
+    .tog::after { content: ''; position: absolute; top: 2px; left: 2px;
+      width: 11px; height: 11px; border-radius: 50%; background: var(--sb-muted);
+      transition: transform .15s, background .15s; }
+    .tog.on { background: var(--sb-accent); border-color: var(--sb-accent); }
+    .tog.on::after { transform: translateX(13px); background: #15141a; }
+
+    /* Background swatches */
+    .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .swatch-wrap { text-align: center; }
+    .swatch { width: 100%; aspect-ratio: 1.6; border-radius: 5px; cursor: pointer;
+      border: 2px solid transparent; transition: border-color .12s, transform .1s;
+      position: relative; overflow: hidden; }
+    .swatch:hover { transform: scale(1.05); }
+    .swatch.on { border-color: var(--sb-accent); }
+    .swatch.on::after { content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+    .swatch-lbl { font-size: 9px; color: var(--sb-muted); margin-top: 2px; line-height: 1.2; }
+
+    /* Tile type cards */
+    .tile-types { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+    .tile-type { position: relative; }
+    .tile-type input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+    .tile-type label { display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 9px 6px; background: var(--sb-surface); border: 1px solid var(--sb-border);
+      border-radius: 6px; cursor: pointer; font-size: 11px; color: var(--sb-muted);
+      transition: border-color .12s, color .12s, background .12s; text-align: center; }
+    .tile-type label .ti { font-size: 16px; line-height: 1; }
+    .tile-type input:checked + label { border-color: var(--sb-accent);
+      color: var(--sb-accent); background: rgba(0,221,255,.07); }
+
+    /* Dynamic lists */
+    .dlist { display: flex; flex-direction: column; gap: 4px; }
+    .dlist-row { display: flex; align-items: center; gap: 5px; }
+    .dlist-row .input { flex: 1; }
+    .del-btn { width: 22px; height: 22px; flex-shrink: 0; background: none;
+      border: 1px solid transparent; border-radius: 4px; color: var(--sb-muted);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-family: inherit; transition: color .12s, background .12s; }
+    .del-btn:hover { color: var(--sb-danger); background: rgba(255,79,94,.08); }
+
+    .add-btn { height: 26px; width: 100%; display: flex; align-items: center; gap: 5px;
+      background: none; border: 1px dashed var(--sb-border); border-radius: 6px;
+      color: var(--sb-muted); font-size: 12px; cursor: pointer; padding: 0 9px;
+      font-family: inherit; margin-top: 5px; transition: color .12s, border-color .12s; }
+    .add-btn:hover { color: var(--sb-accent); border-color: var(--sb-accent); }
+
+    /* ── Right pane ────────────────────────────────────────────────────────── */
+    .right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    /* Preview toolbar */
+    .pv-bar { height: 34px; background: #15141a; border-bottom: 1px solid var(--sb-border);
+      display: flex; align-items: center; padding: 0 12px; gap: 8px; flex-shrink: 0; }
+
+    .pv-label { font-size: 11px; color: var(--sb-muted); }
+
+    .scheme-seg { display: flex; background: var(--sb-surface);
+      border: 1px solid var(--sb-border); border-radius: 5px; overflow: hidden; height: 22px; }
+    .scheme-btn { padding: 0 9px; font-size: 11px; border: none; background: none;
+      color: var(--sb-muted); cursor: pointer; font-family: inherit;
+      transition: background .12s, color .12s; border-right: 1px solid var(--sb-border); }
+    .scheme-btn:last-child { border-right: none; }
+    .scheme-btn.on { background: var(--sb-accent); color: #15141a; font-weight: 600; }
+
+    .upd { margin-left: auto; font-size: 11px; color: var(--sb-accent);
+      opacity: 0; transition: opacity .2s; }
+    .upd.show { opacity: 1; }
+
+    /* Preview iframe */
+    .pv-wrap { flex: 1; position: relative; overflow: hidden; background: #f9f9fb; }
+    #pv { width: 100%; height: 100%; border: none; }
+
+    /* JSON panel */
+    .json-pane { height: var(--sb-json); flex-shrink: 0; background: #15141a;
+      border-top: 1px solid var(--sb-border); display: flex; flex-direction: column; }
+
+    .json-bar { height: 30px; display: flex; align-items: center;
+      padding: 0 12px; gap: 8px; border-bottom: 1px solid var(--sb-border); flex-shrink: 0; }
+
+    .json-title { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--sb-muted); }
+
+    .json-scroll { flex: 1; overflow: auto; padding: 9px 13px; }
+
+    #json-out { font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 11px; line-height: 1.65; color: var(--sb-text); white-space: pre; margin: 0; }
+
+    /* Syntax colours */
+    .jk { color: #cfcfd8; }
+    .js { color: #3fe1b0; }
+    .jn { color: #ff9400; }
+  </style>
+</head>
+<body>
+
+<header class="hdr">
+  <a class="hdr-brand" href="experiments.html">
+    <img src="assets/firefox-logo.svg" width="20" height="20" alt="">
+    Firefox Onboarding
+  </a>
+  <div class="hdr-sep"></div>
+  <span class="hdr-sub">Screen Builder</span>
+  <div class="hdr-right">
+    <a class="btn" href="experiments.html">← Experiments</a>
+    <button class="btn btn-accent" id="btn-copy">Copy JSON</button>
+  </div>
+</header>
+
+<div class="body">
+
+  <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+  <aside class="side">
+
+    <!-- Layout -->
+    <div class="section">
+      <div class="sec-label">Layout</div>
+      <div class="field">
+        <span class="label">Position</span>
+        <div class="seg">
+          <div class="seg-opt">
+            <input type="radio" name="pos" id="pos-split" value="split" checked>
+            <label for="pos-split">Split</label>
+          </div>
+          <div class="seg-opt">
+            <input type="radio" name="pos" id="pos-center" value="centered">
+            <label for="pos-center">Centered</label>
+          </div>
+          <div class="seg-opt">
+            <input type="radio" name="pos" id="pos-full" value="full">
+            <label for="pos-full">Full</label>
+          </div>
+        </div>
+      </div>
+      <div class="tog-row">
+        <span class="tog-name">Logo</span>
+        <div class="tog on" data-key="logo"></div>
+      </div>
+      <div class="tog-row">
+        <span class="tog-name">Progress bar</span>
+        <div class="tog on" data-key="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="section" id="sec-bg">
+      <div class="sec-label">Background image</div>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="section">
+      <div class="sec-label">Content</div>
+      <div class="field">
+        <label class="label" for="inp-title">Title</label>
+        <input class="input" id="inp-title" type="text" value="Welcome to Firefox">
+      </div>
+      <div class="field">
+        <label class="label" for="inp-sub">Subtitle</label>
+        <textarea class="textarea" id="inp-sub" rows="2">We protect your data and block companies from spying on your clicks — automatically.</textarea>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="section">
+      <div class="sec-label">Buttons</div>
+      <div class="field">
+        <label class="label" for="inp-prim">Primary label</label>
+        <input class="input" id="inp-prim" type="text" value="Get started">
+      </div>
+      <div class="tog-row" style="margin-bottom:6px">
+        <span class="tog-name">Secondary button</span>
+        <div class="tog on" data-key="hasSecondary"></div>
+      </div>
+      <div class="field" id="sec-wrap">
+        <label class="label" for="inp-sec">Secondary label</label>
+        <input class="input" id="inp-sec" type="text" value="Skip for now">
+      </div>
+    </div>
+
+    <!-- Tiles -->
+    <div class="section">
+      <div class="sec-label">Tiles</div>
+      <div class="tile-types">
+        <div class="tile-type">
+          <input type="radio" name="tiles" id="tl-none" value="none" checked>
+          <label for="tl-none"><span class="ti">⬜</span>None</label>
+        </div>
+        <div class="tile-type">
+          <input type="radio" name="tiles" id="tl-check" value="checklist">
+          <label for="tl-check"><span class="ti">☑</span>Checklist</label>
+        </div>
+        <div class="tile-type">
+          <input type="radio" name="tiles" id="tl-multi" value="multiselect">
+          <label for="tl-multi"><span class="ti">⊞</span>Multiselect</label>
+        </div>
+        <div class="tile-type">
+          <input type="radio" name="tiles" id="tl-mig" value="migration">
+          <label for="tl-mig"><span class="ti">📥</span>Migration</label>
+        </div>
+      </div>
+
+      <div id="cfg-checklist" style="display:none">
+        <div class="dlist" id="list-check"></div>
+        <button class="add-btn" id="add-check">+ Add item</button>
+      </div>
+
+      <div id="cfg-multi" style="display:none">
+        <div class="field" style="margin-bottom:7px">
+          <label class="label" for="inp-multi-lbl">Label above options</label>
+          <input class="input" id="inp-multi-lbl" type="text" value="Choose what applies to you">
+        </div>
+        <div class="dlist" id="list-multi"></div>
+        <button class="add-btn" id="add-multi">+ Add option</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Right pane ─────────────────────────────────────────────────────────── -->
+  <section class="right">
+
+    <div class="pv-bar">
+      <span class="pv-label">Preview</span>
+      <div class="scheme-seg">
+        <button class="scheme-btn on" data-s="light">☀ Light</button>
+        <button class="scheme-btn" data-s="dark">☾ Dark</button>
+      </div>
+      <span class="upd" id="upd-indicator">↺ Updating…</span>
+    </div>
+
+    <div class="pv-wrap">
+      <iframe id="pv" src="index.html?sandbox=1&scheme=light"></iframe>
+    </div>
+
+    <div class="json-pane">
+      <div class="json-bar">
+        <span class="json-title">JSON output</span>
+        <button class="btn" id="btn-copy2" style="margin-left:auto">Copy</button>
+      </div>
+      <div class="json-scroll">
+        <pre id="json-out"></pre>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<script>
+(function () {
+
+  // ── Background presets ────────────────────────────────────────────────────
+  const BG = [
+    { id: 'none',      lbl: 'None',         swatch: '#e8e8f0',
+      css: '' },
+    { id: 'heart',     lbl: 'Set default',  swatch: 'linear-gradient(135deg,#fce5d0,#f8b08a)',
+      css: "url('assets/br-set-default-fox-heart.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1),rgba(33,3,64,1))" },
+    { id: 'house',     lbl: 'Import',       swatch: 'linear-gradient(135deg,#fce5d0,#f8b08a)',
+      css: "url('assets/br-import-fox-house.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1),rgba(33,3,64,1))" },
+    { id: 'mirror',    lbl: 'FxA',          swatch: 'linear-gradient(135deg,#ffe4d0,#ffc0a0)',
+      css: "url('assets/br-fxa-fox-mirror.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1),rgba(33,3,64,1))" },
+    { id: 'paint',     lbl: 'Add-ons',      swatch: 'linear-gradient(135deg,#fce5d0,#f8b08a)',
+      css: "url('assets/br-amo-fox-paint.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1),rgba(33,3,64,1))" },
+    { id: 'smart',     lbl: 'Smart Window', swatch: 'linear-gradient(135deg,#d0e8ff,#90c0ff)',
+      css: "url('assets/mr-kit-smart-window.svg') var(--mr-secondary-position) no-repeat" },
+    { id: 'sunset',    lbl: 'Sunset',       swatch: 'linear-gradient(160deg,#ffb347,#ff5e6c,#c94b8e)',
+      css: 'linear-gradient(160deg, #ffb347 0%, #ff5e6c 60%, #c94b8e 100%)' },
+    { id: 'ocean',     lbl: 'Ocean',        swatch: 'linear-gradient(160deg,#0061e0,#00ddff)',
+      css: 'linear-gradient(160deg, #0061e0 0%, #00ddff 100%)' },
+  ];
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  const S = {
+    pos:          'split',
+    logo:         true,
+    progressBar:  true,
+    bg:           'heart',
+    title:        'Welcome to Firefox',
+    subtitle:     'We protect your data and block companies from spying on your clicks — automatically.',
+    primLabel:    'Get started',
+    hasSecondary: true,
+    secLabel:     'Skip for now',
+    tilesType:    'none',
+    checkItems:   ['Set Firefox as default browser', 'Import from previous browser'],
+    multiItems:   ['Option 1', 'Option 2', 'Option 3'],
+    multiLabel:   'Choose what applies to you',
+    scheme:       'light',
+  };
+
+  // ── Swatch render ─────────────────────────────────────────────────────────
+  const swatchGrid = document.getElementById('swatches');
+  function renderSwatches() {
+    swatchGrid.innerHTML = '';
+    BG.forEach(b => {
+      const wrap = document.createElement('div');
+      wrap.className = 'swatch-wrap';
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (S.bg === b.id ? ' on' : '');
+      sw.style.background = b.swatch;
+      sw.title = b.lbl;
+      sw.addEventListener('click', () => { S.bg = b.id; renderSwatches(); sync(); });
+      const lbl = document.createElement('div');
+      lbl.className = 'swatch-lbl';
+      lbl.textContent = b.lbl;
+      wrap.appendChild(sw); wrap.appendChild(lbl);
+      swatchGrid.appendChild(wrap);
+    });
+  }
+  renderSwatches();
+
+  // ── Toggles ───────────────────────────────────────────────────────────────
+  document.querySelectorAll('.tog').forEach(el => {
+    el.addEventListener('click', () => {
+      const k = el.dataset.key;
+      S[k] = !S[k];
+      el.classList.toggle('on', S[k]);
+      if (k === 'hasSecondary') document.getElementById('sec-wrap').style.display = S[k] ? '' : 'none';
+      sync();
+    });
+  });
+
+  // ── Position segment ──────────────────────────────────────────────────────
+  document.querySelectorAll('input[name="pos"]').forEach(r => {
+    r.addEventListener('change', () => {
+      S.pos = r.value;
+      document.getElementById('sec-bg').style.display = r.value === 'split' ? '' : 'none';
+      sync();
+    });
+  });
+
+  // ── Tile type ─────────────────────────────────────────────────────────────
+  document.querySelectorAll('input[name="tiles"]').forEach(r => {
+    r.addEventListener('change', () => {
+      S.tilesType = r.value;
+      document.getElementById('cfg-checklist').style.display = r.value === 'checklist' ? '' : 'none';
+      document.getElementById('cfg-multi').style.display     = r.value === 'multiselect' ? '' : 'none';
+      sync();
+    });
+  });
+
+  // ── Text inputs ───────────────────────────────────────────────────────────
+  [['inp-title','title'],['inp-sub','subtitle'],['inp-prim','primLabel'],
+   ['inp-sec','secLabel'],['inp-multi-lbl','multiLabel']].forEach(([id, key]) => {
+    document.getElementById(id).addEventListener('input', e => { S[key] = e.target.value; sync(); });
+  });
+
+  // ── Dynamic lists ─────────────────────────────────────────────────────────
+  function renderList(containerId, arr, onchange) {
+    const c = document.getElementById(containerId);
+    c.innerHTML = '';
+    arr.forEach((v, i) => {
+      const row = document.createElement('div'); row.className = 'dlist-row';
+      const inp = document.createElement('input'); inp.className = 'input'; inp.type = 'text'; inp.value = v;
+      inp.addEventListener('input', () => { arr[i] = inp.value; onchange(); });
+      const del = document.createElement('button'); del.className = 'del-btn'; del.textContent = '×';
+      del.addEventListener('click', () => { arr.splice(i, 1); renderList(containerId, arr, onchange); onchange(); });
+      row.appendChild(inp); row.appendChild(del); c.appendChild(row);
+    });
+  }
+
+  const resync = () => sync();
+  renderList('list-check', S.checkItems, resync);
+  renderList('list-multi',  S.multiItems,  resync);
+
+  document.getElementById('add-check').addEventListener('click', () => {
+    S.checkItems.push('New item');
+    renderList('list-check', S.checkItems, resync); resync();
+  });
+  document.getElementById('add-multi').addEventListener('click', () => {
+    S.multiItems.push('New option');
+    renderList('list-multi', S.multiItems, resync); resync();
+  });
+
+  // ── Scheme toggle ─────────────────────────────────────────────────────────
+  document.querySelectorAll('.scheme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.scheme = btn.dataset.s;
+      document.querySelectorAll('.scheme-btn').forEach(b => b.classList.toggle('on', b === btn));
+      reloadFrame();
+    });
+  });
+
+  // ── Build config for localStorage (used by stubs.js sandbox mode) ─────────
+  function buildCfg() {
+    const bgObj = BG.find(b => b.id === S.bg);
+    return {
+      pos: S.pos, logo: S.logo, progressBar: S.progressBar,
+      background: bgObj ? bgObj.css : '',
+      title: S.title, subtitle: S.subtitle,
+      primLabel: S.primLabel, hasSecondary: S.hasSecondary, secLabel: S.secLabel,
+      tilesType: S.tilesType,
+      checkItems: [...S.checkItems], multiItems: [...S.multiItems], multiLabel: S.multiLabel,
+    };
+  }
+
+  // ── Build screen JSON (for display and copy) ──────────────────────────────
+  function buildJSON() {
+    const cfg = buildCfg();
+    const r = s => ({ raw: s });
+    const content = {};
+
+    if (cfg.pos === 'split') { content.position = 'split'; content.split_narrow_bkg_position = '-228px'; }
+    else if (cfg.pos === 'full') { content.fullscreen = true; }
+
+    if (cfg.logo) content.logo = {};
+    if (cfg.progressBar) content.progress_bar = true;
+    if (cfg.background) content.background = cfg.background;
+    if (cfg.title)    content.title    = r(cfg.title);
+    if (cfg.subtitle) content.subtitle = r(cfg.subtitle);
+
+    if (cfg.tilesType === 'checklist' && cfg.checkItems.length) {
+      content.tiles = {
+        type: 'checklist', style: 'icon',
+        items: cfg.checkItems.map((t, i) => ({
+          id: `check_${i}`, label: r(t), defaultValue: true,
+          checkedAction:   { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: true } } },
+          uncheckedAction: { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: false } } },
+        }))
+      };
+      content.primary_button = { label: r(cfg.primLabel || 'Save and continue'),
+        action: { type: 'MULTI_ACTION', collectSelect: true, navigate: true, data: { actions: [] } } };
+    } else if (cfg.tilesType === 'multiselect' && cfg.multiItems.length) {
+      content.tiles = {
+        type: 'multiselect', label: r(cfg.multiLabel || 'Select options'),
+        data: cfg.multiItems.map((t, i) => ({
+          id: `opt_${i}`, type: 'checkbox', label: r(t),
+          action: { type: 'SET_PREF', data: { pref: { name: 'replace.with.pref', value: t } } },
+        }))
+      };
+      content.primary_button = { label: r(cfg.primLabel),
+        action: { type: 'MULTI_ACTION', collectSelect: true, navigate: true, data: { actions: [] } } };
+    } else if (cfg.tilesType === 'migration') {
+      content.tiles = { type: 'migration-wizard', migrate_start: {}, migrate_close: {} };
+    }
+
+    if (!content.primary_button) {
+      content.primary_button = { label: r(cfg.primLabel), action: { navigate: true } };
+    }
+    if (cfg.hasSecondary && cfg.secLabel) {
+      content.secondary_button = { label: r(cfg.secLabel), style: 'link', action: { navigate: true } };
+    }
+
+    return { id: 'SANDBOX_SCREEN_01', content };
+  }
+
+  // ── Syntax-highlighted JSON ───────────────────────────────────────────────
+  function highlight(json) {
+    return JSON.stringify(json, null, 2)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/("(?:\\.|[^"\\])*"(\s*:)?|true|false|null|-?\d+\.?\d*)/g, m => {
+        if (/^"/.test(m)) return `<span class="${/:$/.test(m)?'jk':'js'}">${m}</span>`;
+        return `<span class="jn">${m}</span>`;
+      });
+  }
+
+  function updateJSON() {
+    document.getElementById('json-out').innerHTML = highlight(buildJSON());
+  }
+
+  // ── Iframe reload ─────────────────────────────────────────────────────────
+  const ind = document.getElementById('upd-indicator');
+  let timer = null;
+
+  function reloadFrame() {
+    ind.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      localStorage.setItem('sandbox-cfg', JSON.stringify(buildCfg()));
+      const f = document.getElementById('pv');
+      f.src = `index.html?sandbox=1&scheme=${S.scheme}&t=${Date.now()}`;
+      f.onload = () => ind.classList.remove('show');
+    }, 550);
+  }
+
+  function sync() { updateJSON(); reloadFrame(); }
+
+  // ── Copy ──────────────────────────────────────────────────────────────────
+  function doCopy(btn) {
+    navigator.clipboard.writeText(JSON.stringify(buildJSON(), null, 2)).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!'; btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 2000);
+    });
+  }
+  document.getElementById('btn-copy').addEventListener('click', e => doCopy(e.currentTarget));
+  document.getElementById('btn-copy2').addEventListener('click', e => doCopy(e.currentTarget));
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  localStorage.setItem('sandbox-cfg', JSON.stringify(buildCfg()));
+  updateJSON();
+
+})();
+</script>
+
+</body>
+</html>

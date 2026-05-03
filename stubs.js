@@ -944,3 +944,100 @@ if (!customElements.get("backup-restore")) {
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// Sandbox mode — index.html?sandbox=1, reads config from localStorage
+// ---------------------------------------------------------------------------
+(function () {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("sandbox")) return;
+
+  // Apply color scheme override before anything renders
+  const scheme = params.get("scheme");
+  if (scheme === "dark")  document.documentElement.style.colorScheme = "dark";
+  if (scheme === "light") document.documentElement.style.colorScheme = "light";
+
+  const DEFAULT_CFG = {
+    pos: "split", logo: true, progressBar: true,
+    background: "url('assets/br-set-default-fox-heart.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252,245,240,1),rgba(33,3,64,1))",
+    title: "Welcome to Firefox",
+    subtitle: "We protect your data and block companies from spying on your clicks — automatically.",
+    primLabel: "Get started", hasSecondary: true, secLabel: "Skip for now",
+    tilesType: "none",
+    checkItems: ["Set Firefox as default browser", "Import from previous browser"],
+    multiItems: ["Option 1", "Option 2", "Option 3"],
+    multiLabel: "Choose what applies to you",
+  };
+
+  function _buildScreen(cfg) {
+    const r = s => ({ raw: s });
+    const content = {};
+
+    if (cfg.pos === "split") {
+      content.position = "split";
+      content.split_narrow_bkg_position = "-228px";
+    } else if (cfg.pos === "full") {
+      content.fullscreen = true;
+    }
+
+    if (cfg.logo)        content.logo         = {};
+    if (cfg.progressBar) content.progress_bar = true;
+    if (cfg.background)  content.background   = cfg.background;
+    if (cfg.title)       content.title        = r(cfg.title);
+    if (cfg.subtitle)    content.subtitle     = r(cfg.subtitle);
+
+    if (cfg.tilesType === "checklist" && cfg.checkItems?.length) {
+      content.tiles = {
+        type: "checklist", style: "icon",
+        items: cfg.checkItems.map((t, i) => ({
+          id: `check_${i}`, label: r(t), defaultValue: true,
+          checkedAction:   { type: "MULTI_ACTION", data: { actions: [] } },
+          uncheckedAction: { type: "MULTI_ACTION", data: { actions: [] } },
+        }))
+      };
+      content.primary_button = {
+        label: r(cfg.primLabel || "Save and continue"),
+        action: { type: "MULTI_ACTION", collectSelect: true, navigate: true, data: { actions: [] } }
+      };
+    } else if (cfg.tilesType === "multiselect" && cfg.multiItems?.length) {
+      content.tiles = {
+        type: "multiselect", label: r(cfg.multiLabel || "Select options"),
+        data: cfg.multiItems.map((t, i) => ({
+          id: `opt_${i}`, type: "checkbox", label: r(t),
+          action: { type: "MULTI_ACTION", data: { actions: [] } }
+        }))
+      };
+      content.primary_button = {
+        label: r(cfg.primLabel),
+        action: { type: "MULTI_ACTION", collectSelect: true, navigate: true, data: { actions: [] } }
+      };
+    } else if (cfg.tilesType === "migration") {
+      content.tiles = { type: "migration-wizard", migrate_start: {}, migrate_close: {} };
+    }
+
+    if (!content.primary_button) {
+      content.primary_button = { label: r(cfg.primLabel || "Get started"), action: { navigate: true } };
+    }
+    if (cfg.hasSecondary && cfg.secLabel) {
+      content.secondary_button = { label: r(cfg.secLabel), style: "link", action: { navigate: true } };
+    }
+
+    return { id: "SANDBOX_SCREEN", content };
+  }
+
+  window.AWGetFeatureConfig = async () => {
+    let cfg = DEFAULT_CFG;
+    try {
+      const raw = localStorage.getItem("sandbox-cfg");
+      if (raw) cfg = { ...DEFAULT_CFG, ...JSON.parse(raw) };
+    } catch (e) {}
+    return {
+      id: "sandbox", template: "multistage",
+      transitions: false, startScreen: 0,
+      screens: [_buildScreen(cfg)],
+    };
+  };
+
+  // In sandbox, finishing just stays on the page (nothing to navigate to)
+  window.AWFinish = () => {};
+})();
