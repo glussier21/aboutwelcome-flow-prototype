@@ -67,6 +67,14 @@ const STRINGS = {
   // Shared
   "onboarding-welcome-header": "Firefox — Welcome",
 
+  // Personalization screen checkbox labels
+  "onboarding-personalization-use-case-personal-option": "Personal",
+  "onboarding-personalization-use-case-school-option": "School",
+  "onboarding-personalization-use-case-work-option": "Work",
+  "onboarding-personalization-motivation-privacy-option": "Privacy",
+  "onboarding-personalization-motivation-productivity-option": "Productivity",
+  "onboarding-personalization-motivation-other-option": "Other",
+
   // Preonboarding (Terms of Use modal)
   "preonboarding-title": "Welcome to Firefox",
   "preonboarding-subtitle": "By continuing, you agree to the Firefox Terms of Use and our Privacy Notice. To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla.",
@@ -554,27 +562,30 @@ if (_nimbusPreviewData) {
   });
 }
 
-// In Nimbus preview mode some skip/primary buttons use OPEN_ABOUT_PAGE to
-// navigate to about:newtab. The bundle can't run that action, so we patch
-// those buttons to use navigate:true instead — the bundle advances screens
-// normally, and AWFinish() fires on the last screen as usual.
+// In Nimbus preview mode the browser can't execute OPEN_ABOUT_PAGE or
+// SET_PREF actions. Patch all skip/continue buttons so they just advance
+// the screen flow (navigate:true), which lets AWFinish() fire naturally
+// on the last screen and redirect to newtab.html.
 function _patchScreenForPreview(screen) {
   if (!screen?.content) return screen;
   const content = { ...screen.content };
-  const _goesToNewtab = action => {
-    const acts = action?.type === "MULTI_ACTION"
-      ? (action.data?.actions || []) : [action];
-    return acts.some(a =>
-      a?.type === "OPEN_ABOUT_PAGE" &&
-      (a.data?.args === "newtab" || String(a.data?.args).startsWith("newtab"))
-    );
-  };
-  for (const key of ["primary_button", "secondary_button"]) {
+  for (const key of ["primary_button", "secondary_button", "additional_button"]) {
     const btn = content[key];
     if (!btn?.action) continue;
-    // Only patch buttons that navigate to newtab without navigate:true
-    // (navigate:true ones already work through the normal bundle flow)
-    if (!btn.action.navigate && _goesToNewtab(btn.action)) {
+    if (btn.action.navigate) continue; // already navigates — leave it
+    // Secondary = skip button: always make it advance in preview
+    // Primary: make it advance only if it goes to newtab (other primaries like
+    // FXA_SIGNIN_FLOW are fine as-is since AWSendToParent handles them)
+    const isSecondary = key === "secondary_button" || key === "additional_button";
+    const _goesToNewtab = action => {
+      const acts = action?.type === "MULTI_ACTION"
+        ? (action.data?.actions || []) : [action];
+      return acts.some(a =>
+        a?.type === "OPEN_ABOUT_PAGE" &&
+        (a.data?.args === "newtab" || String(a.data?.args).startsWith("newtab"))
+      );
+    };
+    if (isSecondary || _goesToNewtab(btn.action)) {
       content[key] = { ...btn, action: { navigate: true } };
     }
   }
@@ -767,6 +778,10 @@ const MW_STYLE = `
     transition: background 0.15s; font-family: inherit; }
   .mw-btn:hover { background: var(--button-background-color-primary-hover, #0250bb); }
   .mw-btn:disabled { opacity: 0.5; cursor: default; }
+  .mw-skip { display: block; text-align: center; margin-top: 10px; font-size: 12px;
+    color: var(--color-accent-primary, #0061e0); background: none; border: none;
+    cursor: pointer; font-family: inherit; text-decoration: underline; }
+  .mw-skip:hover { color: var(--color-accent-primary-hover, #0250bb); }
 `;
 
 const MW_BROWSERS = [
@@ -816,6 +831,7 @@ if (!customElements.get("migration-wizard")) {
               </button>`).join("")}
           </div>
           <button class="mw-btn" ${this._selected ? "" : "disabled"}>Continue</button>
+          <button class="mw-skip">Skip for now</button>
         `;
         div.querySelectorAll(".mw-browser-opt").forEach(btn => {
           btn.addEventListener("click", () => {
@@ -826,6 +842,9 @@ if (!customElements.get("migration-wizard")) {
         div.querySelector(".mw-btn").addEventListener("click", () => {
           this._step = "data";
           this._render();
+        });
+        div.querySelector(".mw-skip").addEventListener("click", () => {
+          this.closest(".screen")?.querySelector(".secondary-cta:not(.top) .secondary")?.click();
         });
 
       } else if (this._step === "data") {
