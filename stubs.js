@@ -524,20 +524,61 @@ const currentScenario   = SCENARIO_MAP[currentScenarioId] ?? SCENARIO_MAP["mac-n
 // ---------------------------------------------------------------------------
 // AW* globals
 // ---------------------------------------------------------------------------
-window.AWGetFeatureConfig = async () => ({
-  id: "prototype_welcome",
-  template: "multistage",
-  transitions: true,
-  backdrop: null,
-  disableHistoryUpdates: true,
-  startScreen: 0,
-  skipFxA: false,
-  write_in_microsurvey: false,
-  requireAction: false,
-  aria_role: null,
-  appAndSystemLocaleInfo: null,
-  screens: currentScenario.screens.map(id => SCREEN[id]).filter(Boolean),
-});
+// Nimbus preview mode: ?nimbus=1 + sessionStorage set by experiments.html
+const _nimbusPreviewData = (() => {
+  if (!new URLSearchParams(location.search).has("nimbus")) return null;
+  try { return JSON.parse(sessionStorage.getItem("nimbus-preview") || "null"); } catch { return null; }
+})();
+
+if (_nimbusPreviewData) {
+  // Show a banner so it's clear this is a Nimbus experiment preview
+  document.addEventListener("DOMContentLoaded", () => {
+    const banner = document.createElement("div");
+    banner.style.cssText = [
+      "position:fixed", "top:12px", "left:50%", "transform:translateX(-50%)",
+      "z-index:9999", "background:#15141a", "color:#fff",
+      "font:600 12px/1 system-ui,sans-serif", "padding:7px 14px 7px 10px",
+      "border-radius:100px", "display:flex", "align-items:center", "gap:8px",
+      "box-shadow:0 2px 12px rgba(0,0,0,.3)", "white-space:nowrap",
+    ].join(";");
+    banner.innerHTML = `
+      <span style="width:7px;height:7px;border-radius:50%;background:#2ac3a2;flex-shrink:0"></span>
+      Nimbus preview
+      <span style="opacity:.55;font-weight:400">·</span>
+      <span style="opacity:.85">${_nimbusPreviewData.expName || ""}</span>
+      <span style="opacity:.4">/</span>
+      <span style="font-family:ui-monospace,monospace;font-size:11px;opacity:.85">${_nimbusPreviewData.branchSlug || ""}</span>
+      <a href="experiments.html" style="margin-left:4px;opacity:.5;color:#fff;text-decoration:none;font-size:11px">✕</a>
+    `;
+    document.body.appendChild(banner);
+  });
+}
+
+window.AWGetFeatureConfig = async () => {
+  if (_nimbusPreviewData?.screens?.length) {
+    return {
+      id: "nimbus_preview",
+      template: "multistage",
+      transitions: true,
+      startScreen: 0,
+      screens: _nimbusPreviewData.screens,
+    };
+  }
+  return {
+    id: "prototype_welcome",
+    template: "multistage",
+    transitions: true,
+    backdrop: null,
+    disableHistoryUpdates: true,
+    startScreen: 0,
+    skipFxA: false,
+    write_in_microsurvey: false,
+    requireAction: false,
+    aria_role: null,
+    appAndSystemLocaleInfo: null,
+    screens: currentScenario.screens.map(id => SCREEN[id]).filter(Boolean),
+  };
+};
 
 window.AWEvaluateScreenTargeting = async (screens) => screens;
 
@@ -569,7 +610,8 @@ window.AWFindBackupsInWellKnownLocations = async () => {};
 window.AWPredictRemoteType    = () => "web";
 
 window.AWFinish = () => {
-  window.location.href = "newtab.html";
+  const inNimbusPreview = new URLSearchParams(location.search).has('nimbus');
+  window.location.href = inNimbusPreview ? 'newtab.html?nimbus=1' : 'newtab.html';
 };
 
 if (typeof globalThis.Services === "undefined") {
@@ -577,42 +619,122 @@ if (typeof globalThis.Services === "undefined") {
 }
 
 // ---------------------------------------------------------------------------
-// Migration wizard stub — realistic multi-step mock
+// Migration wizard stub — 4-step realistic mock
 // ---------------------------------------------------------------------------
 const MW_STYLE = `
-  .mw-stub { font-family: system-ui; padding: 8px 0; }
-  .mw-stub h3 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--text-color, #15141a); }
-  .mw-browsers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-  .mw-browser { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  .mw { font-family: system-ui, sans-serif; padding: 4px 0; }
+  .mw-title { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: var(--text-color, #15141a); }
+  .mw-back { display: flex; align-items: center; gap: 4px; background: none; border: none;
+    padding: 0 0 8px; font-size: 12px; color: var(--color-accent-primary, #0061e0);
+    cursor: pointer; font-family: inherit; }
+  .mw-back:hover { text-decoration: underline; }
+  .mw-back svg { flex-shrink: 0; }
+
+  /* Step 1 — browser list */
+  .mw-browser-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .mw-browser-opt {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
     border: 1.5px solid var(--border-color, #cfcfd8); border-radius: 8px; cursor: pointer;
     background: var(--background-color-canvas, #fff); font-size: 13px;
-    color: var(--text-color, #15141a); transition: border-color 0.15s; }
-  .mw-browser:hover { border-color: var(--color-accent-primary, #0061e0); }
-  .mw-browser.selected { border-color: var(--color-accent-primary, #0061e0);
-    background: light-dark(#f0f6ff, #1a2a4a); }
-  .mw-browser img { width: 24px; height: 24px; }
-  .mw-import-btn { display: block; width: 100%; padding: 10px; margin-top: 4px;
+    color: var(--text-color, #15141a); text-align: left; width: 100%;
+    transition: border-color 0.15s; font-family: inherit;
+  }
+  .mw-browser-opt:hover { border-color: var(--color-accent-primary, #0061e0); }
+  .mw-browser-opt.selected {
+    border-color: var(--color-accent-primary, #0061e0);
+    background: light-dark(#f0f6ff, #1a2a4a);
+  }
+  .mw-browser-icon {
+    width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+  .mw-radio {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--border-color, #cfcfd8);
+    margin-left: auto; flex-shrink: 0; position: relative;
+    transition: border-color 0.15s;
+  }
+  .selected .mw-radio { border-color: var(--color-accent-primary, #0061e0); }
+  .selected .mw-radio::after {
+    content: ''; position: absolute;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--color-accent-primary, #0061e0);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+
+  /* Step 2 — data type checkboxes */
+  .mw-data-list { display: flex; flex-direction: column; margin-bottom: 12px; }
+  .mw-data-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border-color, #e0e0e6);
+    cursor: pointer;
+  }
+  .mw-data-item:last-child { border-bottom: none; }
+  .mw-checkbox {
+    width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
+    border: 2px solid var(--border-color, #cfcfd8);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .mw-checkbox.checked { background: var(--color-accent-primary, #0061e0); border-color: var(--color-accent-primary, #0061e0); }
+  .mw-checkbox.checked::after { content: ''; display: block; width: 9px; height: 5px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translateY(-1px); }
+  .mw-data-label { font-size: 13px; color: var(--text-color, #15141a); flex: 1; }
+  .mw-data-count { font-size: 12px; color: var(--text-color-deemphasized, #5b5b66); }
+
+  /* Step 3 — progress */
+  .mw-prog-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 4px 0; }
+  .mw-prog-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-color, #15141a); }
+  .mw-prog-item.pending { opacity: 0.45; }
+  .mw-prog-status { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .mw-spinner { width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border-color, #e0e0e6);
+    border-top-color: var(--color-accent-primary, #0061e0);
+    animation: mw-spin 0.75s linear infinite; }
+  @keyframes mw-spin { to { transform: rotate(360deg); } }
+
+  /* Step 4 — done */
+  .mw-done { text-align: center; padding: 6px 0 8px; }
+  .mw-done-circle {
+    width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 10px;
+    background: var(--color-accent-primary, #0061e0);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mw-done-circle::after {
+    content: ''; display: block; width: 18px; height: 10px;
+    border-left: 3px solid #fff; border-bottom: 3px solid #fff;
+    transform: rotate(-45deg) translateY(-2px);
+  }
+  .mw-done h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; color: var(--text-color, #15141a); }
+  .mw-done-summary { font-size: 12px; color: var(--text-color-deemphasized, #5b5b66); margin: 0 0 14px; line-height: 1.6; }
+
+  /* Shared button */
+  .mw-btn { display: block; width: 100%; padding: 10px; margin-top: 2px;
     background: var(--button-background-color-primary, #0061e0);
     color: var(--button-text-color-primary, #fff); font-size: 13px; font-weight: 600;
-    border: none; border-radius: 100px; cursor: pointer; }
-  .mw-import-btn:hover { background: var(--button-background-color-primary-hover, #0250bb); }
-  .mw-import-btn:disabled { opacity: 0.5; cursor: default; }
-  .mw-progress { text-align: center; padding: 20px 0; color: var(--text-color, #5b5b66); font-size: 13px; }
-  .mw-progress-bar { height: 4px; background: var(--border-color, #e0e0e6); border-radius: 2px; margin: 12px 0; overflow: hidden; }
-  .mw-progress-bar-fill { height: 100%; background: var(--color-accent-primary, #0061e0); border-radius: 2px;
-    animation: mw-fill 1.4s ease-in-out forwards; }
-  @keyframes mw-fill { from { width: 0 } to { width: 100% } }
-  .mw-done { text-align: center; padding: 8px 0; }
-  .mw-done-icon { font-size: 28px; margin-bottom: 8px; }
-  .mw-done h3 { margin-bottom: 4px; }
-  .mw-done p { font-size: 12px; color: var(--text-color, #5b5b66); margin: 0 0 14px; }
+    border: none; border-radius: 100px; cursor: pointer;
+    transition: background 0.15s; font-family: inherit; }
+  .mw-btn:hover { background: var(--button-background-color-primary-hover, #0250bb); }
+  .mw-btn:disabled { opacity: 0.5; cursor: default; }
 `;
 
-const BROWSERS = [
-  { id: "chrome",  name: "Chrome",       icon: "https://www.google.com/chrome/static/images/chrome-logo-m100.svg" },
-  { id: "safari",  name: "Safari",       icon: "https://www.apple.com/v/safari/r/images/overview/icon_safari__cp90k3u7orey_large.png" },
-  { id: "edge",    name: "Microsoft Edge", icon: "https://edgestatic.azureedge.net/shared/cms/lrs1c69a1j/section-images/a1b46a23-8c05-4d83-b27f-11a746af621c.png" },
-  { id: "other",   name: "Other browser", icon: "" },
+const MW_BROWSERS = [
+  { id: "chrome",  name: "Chrome",         color: "#4285F4" },
+  { id: "safari",  name: "Safari",         color: "#006CFF" },
+  { id: "edge",    name: "Microsoft Edge", color: "#0078D7" },
+  { id: "brave",   name: "Brave",          color: "#FB542B" },
+  { id: "ie",      name: "Internet Explorer", color: "#1EBBEE" },
+  { id: "other",   name: "Other browser",  color: "#8f8f9d" },
+];
+
+const MW_DATA_TYPES = [
+  { id: "bookmarks", label: "Bookmarks",        count: "312 items" },
+  { id: "passwords", label: "Saved passwords",  count: "47 logins" },
+  { id: "history",   label: "Browsing history", count: "2,400 pages" },
+  { id: "tabs",      label: "Open tabs",        count: "8 tabs" },
+  { id: "payment",   label: "Payment methods",  count: "1 card" },
 ];
 
 if (!customElements.get("migration-wizard")) {
@@ -622,55 +744,118 @@ if (!customElements.get("migration-wizard")) {
       style.textContent = MW_STYLE;
       this.appendChild(style);
       this._step = "select";
+      this._selected = null;
+      this._checked = new Set(MW_DATA_TYPES.map(d => d.id));
       this._render();
     }
 
     _render() {
-      const old = this.querySelector(".mw-stub");
+      const old = this.querySelector(".mw");
       if (old) old.remove();
       const div = document.createElement("div");
-      div.className = "mw-stub";
+      div.className = "mw";
 
       if (this._step === "select") {
         div.innerHTML = `
-          <h3>Which browser would you like to import from?</h3>
-          <div class="mw-browsers">
-            ${BROWSERS.map(b => `
-              <button class="mw-browser" data-id="${b.id}">
-                ${b.icon ? `<img src="${b.icon}" alt="" onerror="this.style.display='none'">` : "🌐"}
+          <div class="mw-title">Which browser would you like to import from?</div>
+          <div class="mw-browser-list">
+            ${MW_BROWSERS.map(b => `
+              <button class="mw-browser-opt${this._selected === b.id ? " selected" : ""}" data-id="${b.id}">
+                <span class="mw-browser-icon" style="background:${b.color}">${b.name[0]}</span>
                 ${b.name}
+                <span class="mw-radio"></span>
               </button>`).join("")}
           </div>
-          <button class="mw-import-btn" disabled>Import</button>
+          <button class="mw-btn" ${this._selected ? "" : "disabled"}>Continue</button>
         `;
-        div.querySelectorAll(".mw-browser").forEach(btn => {
+        div.querySelectorAll(".mw-browser-opt").forEach(btn => {
           btn.addEventListener("click", () => {
-            div.querySelectorAll(".mw-browser").forEach(b => b.classList.remove("selected"));
-            btn.classList.add("selected");
-            div.querySelector(".mw-import-btn").disabled = false;
+            this._selected = btn.dataset.id;
+            this._render();
           });
         });
-        div.querySelector(".mw-import-btn").addEventListener("click", () => {
+        div.querySelector(".mw-btn").addEventListener("click", () => {
+          this._step = "data";
+          this._render();
+        });
+
+      } else if (this._step === "data") {
+        const browser = MW_BROWSERS.find(b => b.id === this._selected);
+        div.innerHTML = `
+          <button class="mw-back">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 2L4 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ${browser.name}
+          </button>
+          <div class="mw-title">Choose what to import</div>
+          <div class="mw-data-list">
+            ${MW_DATA_TYPES.map(d => `
+              <div class="mw-data-item" data-id="${d.id}">
+                <span class="mw-checkbox${this._checked.has(d.id) ? " checked" : ""}"></span>
+                <span class="mw-data-label">${d.label}</span>
+                <span class="mw-data-count">${d.count}</span>
+              </div>`).join("")}
+          </div>
+          <button class="mw-btn">Import</button>
+        `;
+        div.querySelector(".mw-back").addEventListener("click", () => {
+          this._step = "select";
+          this._render();
+        });
+        div.querySelectorAll(".mw-data-item").forEach(item => {
+          item.addEventListener("click", () => {
+            const id = item.dataset.id;
+            if (this._checked.has(id)) this._checked.delete(id);
+            else this._checked.add(id);
+            item.querySelector(".mw-checkbox").classList.toggle("checked", this._checked.has(id));
+          });
+        });
+        div.querySelector(".mw-btn").addEventListener("click", () => {
           this._step = "importing";
           this._render();
-          setTimeout(() => { this._step = "done"; this._render(); }, 1600);
+          // Advance through importing items with staggered timeouts
+          const items = [...this._checked];
+          items.forEach((id, i) => {
+            setTimeout(() => {
+              const el = this.querySelector(`.mw-prog-item[data-id="${id}"]`);
+              if (!el) return;
+              el.classList.remove("pending");
+              const status = el.querySelector(".mw-prog-status");
+              if (i < items.length - 1) {
+                status.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="var(--color-accent-primary,#0061e0)"/><path d="M4 7l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+              } else {
+                status.innerHTML = `<span class="mw-spinner"></span>`;
+              }
+            }, i * 420);
+          });
+          setTimeout(() => { this._step = "done"; this._render(); }, items.length * 420 + 600);
         });
+
       } else if (this._step === "importing") {
+        const items = MW_DATA_TYPES.filter(d => this._checked.has(d.id));
         div.innerHTML = `
-          <div class="mw-progress">
-            <p>Importing your data…</p>
-            <div class="mw-progress-bar"><div class="mw-progress-bar-fill"></div></div>
-          </div>`;
+          <div class="mw-title">Importing your data…</div>
+          <div class="mw-prog-list">
+            ${items.map((d, i) => `
+              <div class="mw-prog-item pending" data-id="${d.id}">
+                <span class="mw-prog-status">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="var(--color-accent-primary,#0061e0)"/><path d="M4 7l2 2 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                ${d.label}
+              </div>`).join("")}
+          </div>
+        `;
+
       } else if (this._step === "done") {
+        const imported = MW_DATA_TYPES.filter(d => this._checked.has(d.id));
         div.innerHTML = `
           <div class="mw-done">
-            <div class="mw-done-icon">✓</div>
-            <h3>Import complete!</h3>
-            <p>Your bookmarks, passwords, and history are ready.</p>
-            <button class="mw-import-btn">Continue</button>
-          </div>`;
-        div.querySelector(".mw-import-btn").addEventListener("click", () => {
-          // Advance via the screen's Skip/secondary button (navigate: true action)
+            <div class="mw-done-circle"></div>
+            <h3>Your data has been imported</h3>
+            <p class="mw-done-summary">${imported.map(d => d.count + " " + d.label.toLowerCase()).join(" · ")}</p>
+            <button class="mw-btn">Continue</button>
+          </div>
+        `;
+        div.querySelector(".mw-btn").addEventListener("click", () => {
           this.closest(".screen")?.querySelector(".secondary-cta:not(.top) .secondary")?.click();
         });
       }
