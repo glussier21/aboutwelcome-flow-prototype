@@ -3,6 +3,9 @@
 // Uses the same HTML class names as the bundle so aboutwelcome.css applies directly.
 
 (function () {
+  // Skip in sandbox and Nimbus preview modes — no ToU needed there
+  const _p = new URLSearchParams(location.search);
+  if (_p.has("sandbox") || _p.has("nimbus")) return;
   const S = {
     title:           "Welcome to Firefox",
     subtitle:        "By continuing, you agree to the Firefox Terms of Use and our Privacy Notice. To help improve the browser, Firefox sends diagnostic and interaction data to Mozilla.",
