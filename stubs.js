@@ -584,9 +584,31 @@ window.AWEvaluateScreenTargeting = async (screens) => screens;
 
 window.AWSendToParent = (type, payload) => {
   console.info("[AWSendToParent]", type, payload);
-  if (type === "SPECIAL_ACTION" && payload?.type === "OPEN_URL" && payload?.data?.args) {
-    window.open(payload.data.args, "_blank", "noopener,noreferrer");
+  if (type !== "SPECIAL_ACTION") return Promise.resolve(true);
+
+  const _navToNewtab = () => {
+    const inPreview = new URLSearchParams(location.search).has("nimbus");
+    window.location.href = inPreview ? "newtab.html?nimbus=1" : "newtab.html";
+  };
+
+  // Expand MULTI_ACTION so we can handle each sub-action the same way
+  const actions = payload?.type === "MULTI_ACTION"
+    ? (payload?.data?.actions || [])
+    : [payload].filter(Boolean);
+
+  let goToNewtab = false;
+  for (const action of actions) {
+    if (!action?.type) continue;
+    if (action.type === "OPEN_URL" && action.data?.args) {
+      window.open(action.data.args, "_blank", "noopener,noreferrer");
+    }
+    if (action.type === "OPEN_ABOUT_PAGE") {
+      const page = action.data?.args || "";
+      if (page === "newtab" || page.startsWith("newtab")) goToNewtab = true;
+    }
   }
+  if (goToNewtab) _navToNewtab();
+
   return Promise.resolve(true);
 };
 
